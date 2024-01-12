@@ -158,12 +158,13 @@ app.post("/NewDept", async (req, res) => {
 app.get("/getall", async (req, res) => {
   try {
     const getall = await pool.query(
-      "select st.id,lastname, firstname, ph.extension from staff as st inner join phone as ph on st.id = ph.id order by lastname asc"
+      "select st.id,lastname, firstname, ph.extension from staff as st inner join phone as ph on st.id = ph.staffid order by lastname asc"
     );
     res.json(getall.rows);
   } catch (err) {
     console.error(err.message);
   }
+  console.log("what");
 });
 
 app.get("/dept", async (req, res) => {
@@ -207,33 +208,214 @@ app.put("/staffupdateext/:id", async (req, res) => {
     console.error(err.message);
   }
 });
+// app.put("/staffupdatefirstname/:id", async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     const { firstname, lastname } = req.body;
+
+//     console.log("Received data:", req.body); // Log received data
+
+//     const extensionupdate = await pool.query(
+//       "UPDATE staff SET firstname = $1, lastname = $2 WHERE id = $3",
+//       [firstname, lastname, id]
+//     );
+
+//     res.json("Extension was updated!");
+//   } catch (err) {
+//     console.error(err.message);
+//     res.status(500).json("Internal Server Error");
+//   }
+// });
+
+// app.put("/staffupdatefirstname/:id", async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     const { firstname, lastname } = req.body;
+
+//     let queryValues = [];
+//     let querySet = [];
+
+//     if (firstname !== undefined && firstname !== null) {
+//       queryValues.push(firstname);
+//       querySet.push(`firstname = $${queryValues.length}`);
+//     }
+
+//     if (lastname !== undefined && lastname !== null) {
+//       queryValues.push(lastname);
+//       querySet.push(`lastname = $${queryValues.length}`);
+//     }
+
+//     queryValues.push(id);
+
+//     if (querySet.length === 0) {
+//       return res
+//         .status(400)
+//         .json({ error: "No valid fields provided for update" });
+//     }
+
+//     const queryText = `UPDATE staff SET ${querySet.join(", ")} WHERE id = $${
+//       queryValues.length
+//     } RETURNING *`;
+
+//     const extensionupdate = await pool.query(queryText, queryValues);
+
+//     if (extensionupdate.rowCount > 0) {
+//       res.json(extensionupdate.rows[0]);
+//     } else {
+//       res.status(404).json({ message: "Staff member not found" });
+//     }
+//   } catch (error) {
+//     console.error("Error updating staff member:", error);
+//     res.status(500).json({ error: "Internal server error" });
+//   }
+// });
+
+// app.put("/staffupdatefirstname/:id", async (req, res) => {
+//   try {
+//     // console.log(req.body);
+//     const { id } = req.params;
+//     const { firstname, lastname, extension } = req.body; // Including extension in the request body
+
+//     // if (extension !== undefined && extension !== null) {
+//     //   const extensionupdate = await pool.query(
+//     //     "UPDATE phone SET  extension = $1 WHERE staffid = $2",
+//     //     [extension, id]
+//     //   );
+//     // }
+//     const extensionInt = parseInt(extension);
+//     if (isNaN(extensionInt)) {
+//       return res.status(400).json({ error: "Invalid extension format" });
+//     }
+
+//     try {
+//       const extensionupdate = await pool.query(
+//         "UPDATE phone SET extension = $1 WHERE id = $2",
+//         [extensionInt, id]
+//       );
+//       console.log("Extension updated successfully!");
+//       res.json("Extension was updated!");
+//     } catch (err) {
+//       console.error(err.message);
+//       res.status(500).json("Internal Server Error");
+//     }
+
+//     // Update staff table
+//     let staffQueryValues = [];
+//     let staffQuerySet = [];
+
+//     if (firstname !== undefined && firstname !== null) {
+//       staffQueryValues.push(firstname);
+//       staffQuerySet.push(`firstname = $${staffQueryValues.length}`);
+//     }
+
+//     if (lastname !== undefined && lastname !== null) {
+//       staffQueryValues.push(lastname);
+//       staffQuerySet.push(`lastname = $${staffQueryValues.length}`);
+//     }
+
+//     staffQueryValues.push(id);
+
+//     let staffUpdateResult;
+//     if (staffQuerySet.length > 0) {
+//       const staffQueryText = `UPDATE staff SET ${staffQuerySet.join(
+//         ", "
+//       )} WHERE id = $${staffQueryValues.length} RETURNING *`;
+//       staffUpdateResult = await pool.query(staffQueryText, staffQueryValues);
+//     }
+
+//     // Update phone table
+
+//     // Respond with appropriate message
+//     if (staffUpdateResult && staffUpdateResult.rowCount > 0) {
+//       res.json({
+//         staff: staffUpdateResult.rows[0],
+//         message: "Update successful",
+//       });
+//     } else {
+//       res.status(404).json({ message: "Staff member not found" });
+//     }
+//   } catch (error) {
+//     console.error("Error updating staff member:", error);
+//     res.status(500).json({ error: "Internal server error" });
+//   }
+// });
+
 app.put("/staffupdatefirstname/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const { firstname } = req.body;
-    const extensionupdate = await pool.query(
-      "UPDATE staff SET firstname = $1 WHERE id = $2",
-      [firstname, id]
-    );
+    const { firstname, lastname, extension } = req.body;
 
-    res.json("Extension was updated!");
-  } catch (err) {
-    console.error(err.message);
+    // Assuming extension is related to the phone table
+
+    let queryValues = [];
+    let querySet = [];
+
+    if (firstname != null) {
+      queryValues.push(firstname);
+      querySet.push(`firstname = $${queryValues.length}`);
+    }
+
+    if (lastname != null) {
+      queryValues.push(lastname);
+      querySet.push(`lastname = $${queryValues.length}`);
+    }
+
+    queryValues.push(id);
+
+    if ((querySet.length > 0) & (querySet != null)) {
+      const queryText = `UPDATE staff SET ${querySet.join(", ")} WHERE id = $${
+        queryValues.length
+      } RETURNING *`;
+      const staffUpdateResult = await pool.query(queryText, queryValues);
+
+      if (staffUpdateResult.rowCount > 0) {
+        return res.json({
+          staff: staffUpdateResult.rows[0],
+          message: "Update successful",
+        });
+      }
+    }
+    const extensionInt = parseInt(extension);
+    console.log("extension " + extensionInt);
+    console.log("id " + id);
+    await pool.query("UPDATE phone SET extension = $1 WHERE staffid = $2", [
+      extensionInt,
+      id,
+    ]);
+
+    // If no rows are updated
+    // return res.status(404).json({ message: "Staff member not found" });
+  } catch (error) {
+    console.error("Error updating staff member:", error);
+
+    // Prevent sending a response if one has already been sent
+    // if (!res.headersSent) {
+    //   return res.status(500).json({ error: "Internal server error" });
+    // }
   }
 });
 
 app.put("/staffupdateext/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const { extension } = req.body;
+    const { firstname, lastname } = req.body;
+
+    console.log("Received PUT request to /staffupdateext/:id");
+    console.log("ID:", id);
+    //console.log("Extension:", extension);
+    console.log("First Name:", firstname);
+    console.log("Last Name:", lastname);
+
     const extensionupdate = await pool.query(
-      "UPDATE phone SET  extension = $1 WHERE id = $2",
+      "UPDATE phone SET extension = $1 WHERE id = $2",
       [extension, id]
     );
 
+    console.log("Extension updated successfully!");
     res.json("Extension was updated!");
   } catch (err) {
     console.error(err.message);
+    res.status(500).json("Internal Server Error");
   }
 });
 
